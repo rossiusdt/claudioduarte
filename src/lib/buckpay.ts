@@ -37,20 +37,21 @@ export interface PixTransaction {
 
 export async function createPix(params: CreatePixParams): Promise<PixTransaction> {
   const body = {
+    external_id: params.externalId,
+    payment_method: "pix",
     amount: params.amount,
-    paymentMethod: "pix",
-    externalId: params.externalId,
-    customer: {
-      name: params.customer.name,
-      email: params.customer.email,
-      document: params.customer.cpf,
-      phone: `55${params.customer.phone}`,
-    },
+    pix: { expires_in_days: 1 },
     items: params.items.map(i => ({
       title: i.title,
-      unitPrice: i.unitPrice,
+      unit_price: i.unitPrice,
       quantity: i.quantity,
     })),
+    buyer: {
+      name: params.customer.name,
+      email: params.customer.email,
+      cpf: params.customer.cpf,
+      phone: `55${params.customer.phone}`,
+    },
   };
 
   let res: Response;
@@ -79,31 +80,13 @@ export async function createPix(params: CreatePixParams): Promise<PixTransaction
     throw new Error(msg || `Erro ao gerar Pix (${res.status})`);
   }
 
-  // Blackout pode retornar os dados em data.data ou diretamente
   const tx = (data.data ?? data) as Record<string, unknown>;
   const pix = tx.pix as Record<string, unknown> | undefined;
-
-  // Tenta vários campos comuns de diferentes gateways
-  const brcode =
-    (pix?.code as string) ??
-    (pix?.emv as string) ??
-    (tx.pixCode as string) ??
-    (tx.brcode as string) ??
-    (tx.qr_code as string) ??
-    "";
-
-  const qrcode =
-    (pix?.qrcode_base64 as string) ??
-    (pix?.base64 as string) ??
-    (tx.qrcodeBase64 as string) ??
-    (tx.qrcode_base64 as string) ??
-    "";
-
   return {
-    id: (tx.id as string) ?? "",
-    brcode,
-    qrcode,
-    status: (tx.status as string) ?? "",
+    id: tx.id as string,
+    brcode: (pix?.code as string) ?? "",
+    qrcode: (pix?.qrcode_base64 as string) ?? "",
+    status: tx.status as string,
   };
 }
 
@@ -123,5 +106,5 @@ export async function getTransactionStatus(id: string): Promise<string> {
     return "unknown";
   }
   const tx = (data.data ?? data) as Record<string, unknown>;
-  return (tx.status as string) ?? "unknown";
+  return tx.status as string;
 }
