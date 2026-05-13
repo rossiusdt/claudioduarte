@@ -54,17 +54,11 @@ export async function createPix(params: CreatePixParams): Promise<PixTransaction
     },
   };
 
-  let res: Response;
-  try {
-    res = await fetch(`${SUPABASE_URL}/functions/v1/create-pix-charge`, {
-      method: "POST",
-      mode: "cors",
-      headers: edgeHeaders(),
-      body: JSON.stringify(body),
-    });
-  } catch {
-    throw new Error("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.");
-  }
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/create-pix-charge`, {
+    method: "POST",
+    headers: edgeHeaders(),
+    body: JSON.stringify(body),
+  });
 
   const text = await res.text();
   let data: Record<string, unknown>;
@@ -80,13 +74,12 @@ export async function createPix(params: CreatePixParams): Promise<PixTransaction
     throw new Error(msg || `Erro ao gerar Pix (${res.status})`);
   }
 
-  const tx = (data.data ?? data) as Record<string, unknown>;
-  const pix = tx.pix as Record<string, unknown> | undefined;
+  const tx = data.data ?? data;
   return {
-    id: tx.id as string,
-    brcode: (pix?.code as string) ?? "",
-    qrcode: (pix?.qrcode_base64 as string) ?? "",
-    status: tx.status as string,
+    id: tx.id,
+    brcode: tx.pix?.code ?? "",
+    qrcode: tx.pix?.qrcode_base64 ?? "",
+    status: tx.status,
   };
 }
 
