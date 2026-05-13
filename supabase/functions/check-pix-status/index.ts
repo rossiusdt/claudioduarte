@@ -1,14 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const BUCKPAY_TOKEN = Deno.env.get("BUCKPAY_TOKEN") ?? "sk_live_e2498402a1af2f57d815583f2ae52175";
-const BUCKPAY_USER_AGENT = Deno.env.get("BUCKPAY_USER_AGENT") ?? "Buckpay API";
-const BUCKPAY_BASE = "https://api.realtechdev.com.br";
+const BLACKOUT_PUBLIC_KEY = Deno.env.get("BLACKOUT_PUBLIC_KEY") ?? "pk_P3mpJGyvkHAtVPRMAkWfH9TTy0XFsqSa4YiN51WeGdBlBSeE";
+const BLACKOUT_SECRET_KEY = Deno.env.get("BLACKOUT_SECRET_KEY") ?? "sk_nb_1p1bIJLZ1R5wY1pqmSBUVdel0lup3C7RkU28JsDoEC1Kl";
+const BLACKOUT_BASE = "https://api.blackpayments.pro/v1/transactions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
+
+function basicAuth() {
+  return "Basic " + btoa(`${BLACKOUT_PUBLIC_KEY}:${BLACKOUT_SECRET_KEY}`);
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -26,11 +30,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const res = await fetch(`${BUCKPAY_BASE}/v1/transactions/${id}`, {
+    const res = await fetch(`${BLACKOUT_BASE}/${id}`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${BUCKPAY_TOKEN}`,
-        "User-Agent": BUCKPAY_USER_AGENT,
+        "Authorization": basicAuth(),
       },
     });
 
